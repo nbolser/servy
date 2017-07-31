@@ -1,18 +1,27 @@
 defmodule Servy.Handler do
   def handle(request) do
-  	request 
+  	request
   	|> parse
+    |> rewrite_path
     |> log
-  	|> route 
+  	|> route
+    |> track
   	|> format_response
   end
+
+  def track(%{ status: 404, path: path } = conv) do
+    IO.puts "Warning: #{path} is unauthorized"
+    conv
+  end
+
+  def track(conv), do: conv
 
   def log(conv), do: IO.inspect(conv)
 
   def parse(request) do
   	[method, path, _] =
-  		request 
-  		|> String.split( "\n") 
+  		request
+  		|> String.split( "\n")
   		|> List.first
   		|> String.split(" ")
 
@@ -24,27 +33,29 @@ defmodule Servy.Handler do
     }
   end
 
-  def route(conv) do
-    route(conv, conv.method, conv.path)
+  def rewrite_path(%{ path: "/vehiclos" } = conv) do
+    %{ conv | path: "/vehicles" }
   end
 
-  def route(conv, "GET", "/vehicles") do
+  def rewrite_path(conv), do: conv
+
+  def route(%{ method: "GET", path: "/vehicles" } = conv) do
     %{ conv | status: 200, resp_body: "Cars, Trucks, Buses" }
   end
 
-  def route(conv, "GET", "/cars") do
+  def route(%{ method: "GET", path: "/cars" } = conv) do
     %{ conv | status: 200, resp_body: "Toyota, Jeep, Fiat" }
   end
 
-  def route(conv, "GET", "/cars/" <> id) do
+  def route(%{ method: "GET", path: "/cars/" <> id } = conv) do
     %{ conv | status: 200, resp_body: "Car #{id}" }
   end
 
-  def route(conv, "DELETE", "/cars/" <> _id) do
+  def route(%{ method: "DELETE", path: "/cars/" <> _id } = conv) do
     %{ conv | status: 403, resp_body: "Deleting car is forbidden" }
   end
 
-  def route(conv, _method, path) do
+  def route(%{ path: path } = conv) do
     %{ conv | status: 404, resp_body: "Path #{path} not available."}
   end
 
@@ -67,7 +78,7 @@ defmodule Servy.Handler do
       404 => "Not Found",
       500 => "Internal Server Error"
     }[code]
-    
+
   end
 end
 
@@ -109,6 +120,18 @@ IO.puts response
 
 request = """
 GET /cars/1 HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts response
+
+request = """
+GET /vehiclos HTTP/1.1
 Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
