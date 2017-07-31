@@ -1,10 +1,13 @@
 defmodule Servy.Handler do
   def handle(request) do
   	request 
-  	|> parse 
+  	|> parse
+    |> log
   	|> route 
   	|> format_response
   end
+
+  def log(conv), do: IO.inspect(conv)
 
   def parse(request) do
   	[method, path, _] =
@@ -16,24 +19,43 @@ defmodule Servy.Handler do
   end
 
   def route(conv) do
-    # TODO: Create a new map that also has the response body:
-    conv = %{ method: "GET", path: "/vehicles", resp_body: "Cars, Trucks, Buses" }
+    route(conv, conv.method, conv.path)
+  end
+
+  def route(conv, "GET", "/vehicles") do
+    conv = %{ conv | resp_body: "Cars, Trucks, Buses" }
+  end
+
+  def route(conv, "GET", "/cars") do
+    conv = %{ conv | resp_body: "Toyota, Jeep, Fiat" }
   end
 
   def format_response(conv) do
-    # TODO: Use values in the map to create an HTTP response string:
     """
     HTTP/1.1 200 OK
     Content-Type: text/html
-    Content-Length: 20
+    Content-Length: #{String.length(conv.resp_body)}
 
-    Cars, Trucks, Buses
+    #{conv.resp_body}
     """
   end
+
 end
 
 request = """
-GET /wildthings HTTP/1.1
+GET /vehicles HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts response
+
+request = """
+GET /cars HTTP/1.1
 Host: example.com
 User-Agent: ExampleBrowser/1.0
 Accept: */*
