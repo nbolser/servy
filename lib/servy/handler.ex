@@ -1,16 +1,19 @@
 defmodule Servy.Handler do
+  require Logger
+
   def handle(request) do
-  	request
-  	|> parse
+    request
+    |> parse
     |> rewrite_path
     |> log
-  	|> route
+    |> route
+    |> emojify
     |> track
-  	|> format_response
+    |> format_response
   end
 
   def track(%{ status: 404, path: path } = conv) do
-    IO.puts "Warning: #{path} is unauthorized"
+    Logger.warn "Warning: #{path} is unauthorized"
     conv
   end
 
@@ -18,14 +21,22 @@ defmodule Servy.Handler do
 
   def log(conv), do: IO.inspect(conv)
 
-  def parse(request) do
-  	[method, path, _] =
-  		request
-  		|> String.split( "\n")
-  		|> List.first
-  		|> String.split(" ")
+  def rewrite_path(%{ path: path } = conv) do
+    regex = ~r{\/(?<thing>\w+)\?id=(?<id>\d+)}
+    captures = Regex.named_captures(regex, path)
+    rewrite_path_captures(conv, captures)
+  end
 
-  	%{
+  def rewrite_path(conv), do: conv
+
+  def parse(request) do
+    [method, path, _] =
+    request
+      |> String.split( "\n")
+      |> List.first
+      |> String.split(" ")
+
+      %{
       method: method,
       path: path,
       resp_body: "",
@@ -33,11 +44,20 @@ defmodule Servy.Handler do
     }
   end
 
-  def rewrite_path(%{ path: "/vehiclos" } = conv) do
-    %{ conv | path: "/vehicles" }
+<<<<<<< Updated upstream
+  def rewrite_path(conv) do
+    %{ conv | path: String.replace(conv.path, "?id=", "/")}
   end
 
-  def rewrite_path(conv), do: conv
+  def rewrite_path(%{ path: "/vehiclos" } = conv) do
+    %{ conv | path: "/vehicles" }
+=======
+  def rewrite_path_captures(conv, %{"thing" => thing, "id" => id}) do
+    %{ conv | path: "/#{thing}/#{id}"}
+>>>>>>> Stashed changes
+  end
+
+  def rewrite_path_captures(conv, nil), do: conv
 
   def route(%{ method: "GET", path: "/vehicles" } = conv) do
     %{ conv | status: 200, resp_body: "Cars, Trucks, Buses" }
@@ -58,6 +78,12 @@ defmodule Servy.Handler do
   def route(%{ path: path } = conv) do
     %{ conv | status: 404, resp_body: "Path #{path} not available."}
   end
+
+  def emojify(%{ status: 200 } = conv) do
+    %{ conv | status: String.duplicate("👍", 5) }
+  end
+
+  def emojify(conv), do: conv
 
   def format_response(conv) do
     """
@@ -141,3 +167,19 @@ Accept: */*
 response = Servy.Handler.handle(request)
 
 IO.puts response
+
+request = """
+GET /bears?id=1 HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+<<<<<<< Updated upstream
+response = Servy.Handler.handle(request)
+
+IO.puts response
+=======
+
+response = Servy.Handler.handle(request)
+>>>>>>> Stashed changes
