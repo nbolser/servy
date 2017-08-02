@@ -1,12 +1,12 @@
 defmodule Servy.Handler do
   def handle(request) do
-  	request
-  	|> parse
+    request
+    |> parse
     |> rewrite_path
     |> log
-  	|> route
+    |> route
     |> track
-  	|> format_response
+    |> format_response
   end
 
   def track(%{ status: 404, path: path } = conv) do
@@ -19,13 +19,13 @@ defmodule Servy.Handler do
   def log(conv), do: IO.inspect(conv)
 
   def parse(request) do
-  	[method, path, _] =
-  		request
-  		|> String.split( "\n")
-  		|> List.first
-  		|> String.split(" ")
+    [method, path, _] =
+      request
+        |> String.split( "\n")
+        |> List.first
+        |> String.split(" ")
 
-  	%{
+    %{
       method: method,
       path: path,
       resp_body: "",
