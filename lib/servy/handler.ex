@@ -1,4 +1,6 @@
 defmodule Servy.Handler do
+  require Logger
+
   def handle(request) do
     request
     |> parse
@@ -10,13 +12,20 @@ defmodule Servy.Handler do
   end
 
   def track(%{ status: 404, path: path } = conv) do
-    IO.puts "Warning: #{path} is unauthorized"
+    Logger.warn "Warning: #{path} is unauthorized"
     conv
   end
 
   def track(conv), do: conv
 
   def log(conv), do: IO.inspect(conv)
+
+
+  def rewrite_path(%{ path: "/vehiclos" } = conv) do
+    %{ conv | path: "/vehicles" }
+  end
+
+  def rewrite_path(conv), do: conv
 
   def parse(request) do
     [method, path, _] =
@@ -32,12 +41,6 @@ defmodule Servy.Handler do
       status: nil
     }
   end
-
-  def rewrite_path(%{ path: "/vehiclos" } = conv) do
-    %{ conv | path: "/vehicles" }
-  end
-
-  def rewrite_path(conv), do: conv
 
   def route(%{ method: "GET", path: "/vehicles" } = conv) do
     %{ conv | status: 200, resp_body: "Cars, Trucks, Buses" }
