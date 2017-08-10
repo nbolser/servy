@@ -20,7 +20,6 @@ defmodule Servy.Handler do
 
   def log(conv), do: IO.inspect(conv)
 
-
   def rewrite_path(%{ path: "/vehiclos" } = conv) do
     %{ conv | path: "/vehicles" }
   end
@@ -69,6 +68,13 @@ defmodule Servy.Handler do
   def route(%{ method: "GET", path: "/about" } = conv) do
     Path.expand("../../pages", __DIR__)
     |> Path.join("about.html")
+    |> File.read
+    |>handle_file(conv)
+  end
+
+  def route(%{ method: "GET", path: "/bears/new" } = conv) do
+    Path.expand("../../pages", __DIR__)
+    |> Path.join("form.html")
     |> File.read
     |>handle_file(conv)
   end
@@ -175,3 +181,17 @@ Accept: */*
 response = Servy.Handler.handle(request)
 
 IO.puts response
+
+request = """
+GET /bears/new HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts response
+
+
