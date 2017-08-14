@@ -1,9 +1,10 @@
 defmodule Servy.Handler do
-  require Logger
-
-  @moduledoc "Serves HTTP requests"
+  @moduledoc "Handles HTTP requests"
 
   @pages_path Path.expand("../../pages", __DIR__)
+
+  import Servy.Plugins, only: [ rewrite_path: 1, log: 1, track: 1 ]
+  import Servy.Parser, only: [ parse: 1 ]
 
   def handle(request) do
     request
@@ -13,36 +14,6 @@ defmodule Servy.Handler do
     |> route
     |> track
     |> format_response
-  end
-
-  def track(%{ status: 404, path: path } = conv) do
-    Logger.warn "Warning: #{path} is unauthorized"
-    conv
-  end
-
-  def track(conv), do: conv
-
-  def log(conv), do: IO.inspect(conv)
-
-  def rewrite_path(%{ path: "/vehiclos" } = conv) do
-    %{ conv | path: "/vehicles" }
-  end
-
-  def rewrite_path(conv), do: conv
-
-  def parse(request) do
-    [method, path, _] =
-      request
-        |> String.split( "\n")
-        |> List.first
-        |> String.split(" ")
-
-    %{
-      method: method,
-      path: path,
-      resp_body: "",
-      status: nil
-    }
   end
 
   def handle_file({:ok, content}, conv ) do
